@@ -29,6 +29,7 @@ import org.tvbrowser.devplugin.Plugin;
 import org.tvbrowser.devplugin.PluginManager;
 import org.tvbrowser.devplugin.PluginMenu;
 import org.tvbrowser.devplugin.Program;
+import org.tvbrowser.devplugin.ReceiveTarget;
 
 import android.app.Service;
 import android.content.Intent;
@@ -222,5 +223,13 @@ public class SimpleMarkerPlugin extends Service {
     public String getAuthor() throws RemoteException {
       return "René Mach";
     }
+    
+    @Override
+    public ReceiveTarget[] getAvailableProgramReceiveTargets() throws RemoteException {
+      return null;
+    }
+
+    @Override
+    public void receivePrograms(Program[] programs, ReceiveTarget target) throws RemoteException {}
   };
 }
