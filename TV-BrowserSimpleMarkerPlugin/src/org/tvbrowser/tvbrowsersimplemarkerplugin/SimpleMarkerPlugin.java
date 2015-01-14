@@ -19,6 +19,7 @@
  */
 package org.tvbrowser.tvbrowsersimplemarkerplugin;
 
+import java.io.ByteArrayOutputStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +35,8 @@ import org.tvbrowser.devplugin.ReceiveTarget;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences.Editor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
@@ -117,7 +120,16 @@ public class SimpleMarkerPlugin extends Service {
         if(mMarkingProgramIds.contains(programId)) {
           mRemovingProgramId = program.getId();
           
-          if(mPluginManager.unmarkProgram(program)) {
+          boolean unmarked = false;
+          
+          if(mPluginManager.getTvBrowserSettings().getTvbVersionCode() >= 308) {
+            unmarked = mPluginManager.unmarkProgramWithIcon(program,SimpleMarkerPlugin.class.getCanonicalName());
+          }
+          else {
+            unmarked = mPluginManager.unmarkProgram(program);
+          }
+          
+          if(unmarked) {
             mMarkingProgramIds.remove(programId);
             save();
           }
@@ -192,7 +204,11 @@ public class SimpleMarkerPlugin extends Service {
     
     @Override
     public byte[] getMarkIcon() throws RemoteException {
-      return null;
+      Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_action_attach);
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      icon.compress(Bitmap.CompressFormat.PNG, 100, stream);
+      
+      return stream.toByteArray();
     }
     
     @Override

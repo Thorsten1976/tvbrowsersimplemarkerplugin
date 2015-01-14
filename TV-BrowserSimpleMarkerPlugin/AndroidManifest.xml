@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.tvbrowser.tvbrowsersimplemarkerplugin"
-    android:versionCode="4"
+    android:versionCode="5"
     android:versionName="@string/version" >
 
     <uses-sdk
@@ -14,7 +14,7 @@
         android:theme="@style/AppTheme" >
         <service
             android:name=".SimpleMarkerPlugin"
-            android:label="1"
+            android:label="3"
             android:permission="org.tvbrowser.permission.BIND_PLUGIN"
             android:exported="true">
             <intent-filter>
