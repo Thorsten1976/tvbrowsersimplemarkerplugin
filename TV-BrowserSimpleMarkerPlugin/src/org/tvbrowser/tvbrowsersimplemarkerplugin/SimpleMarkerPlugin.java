@@ -20,9 +20,11 @@
 package org.tvbrowser.tvbrowsersimplemarkerplugin;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.tvbrowser.devplugin.Channel;
@@ -40,7 +42,7 @@ import android.graphics.BitmapFactory;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import android.text.TextUtils;
 
 /**
  * A service class that provides a simple marking functionality for TV-Browser for Android.
@@ -89,9 +91,9 @@ public class SimpleMarkerPlugin extends Service {
   }
   
   private void save() {
-    Editor edit = PreferenceManager.getDefaultSharedPreferences(SimpleMarkerPlugin.this).edit();
-    
-    edit.putStringSet(PREF_MARKINGS, mMarkingProgramIds);
+    Editor edit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
+    edit.remove(PREF_MARKINGS);
+    edit.putString(PREF_MARKINGS, TextUtils.join(";", mMarkingProgramIds));
     edit.commit();
   }
 
@@ -102,12 +104,10 @@ public class SimpleMarkerPlugin extends Service {
     public void openPreferences(List<Channel> subscribedChannels) throws RemoteException {}
     
     @Override
-    public boolean onProgramContextMenuSelected(Program program, PluginMenu pluginMenu) throws RemoteException {
-      Log.d("info44", "onProgramContextMenuSelected " + program + " " + program.getId() + " " + pluginMenu);
-      
+    public boolean onProgramContextMenuSelected(Program program, PluginMenu pluginMenu) throws RemoteException {      
       boolean mark = false;
       String programId = String.valueOf(program.getId());
-      Log.d("info44", "programId " + programId);
+      
       if(pluginMenu.getId() == MARK_ACTION) {
         if(!mMarkingProgramIds.contains(programId)) {
           mark = true;
@@ -116,7 +116,6 @@ public class SimpleMarkerPlugin extends Service {
         }
       }
       else {
-        Log.d("info44", "unmark " + mMarkingProgramIds.contains(programId) + " " + mPluginManager);
         if(mMarkingProgramIds.contains(programId)) {
           mRemovingProgramId = program.getId();
           
@@ -150,7 +149,21 @@ public class SimpleMarkerPlugin extends Service {
     public void onActivation(PluginManager pluginManager) throws RemoteException {
       mPluginManager = pluginManager;
       
-      mMarkingProgramIds = PreferenceManager.getDefaultSharedPreferences(SimpleMarkerPlugin.this).getStringSet(PREF_MARKINGS, new HashSet<String>());
+      mMarkingProgramIds = new HashSet<String>();
+      Map<String,?> map = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getAll();
+      
+      for(String key : map.keySet()) {
+        Object test = map.get(key);
+        
+        if(test instanceof Set) {
+          mMarkingProgramIds = (Set<String>)test;
+        }
+        else {
+          if(test != null) {
+            mMarkingProgramIds.addAll(Arrays.asList(((String)test).split(";")));
+          }
+        }
+      }
     }
     
     @Override
