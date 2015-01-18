@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.tvbrowser.devplugin.Channel;
@@ -43,6 +42,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.Log;
 
 /**
  * A service class that provides a simple marking functionality for TV-Browser for Android.
@@ -63,7 +63,7 @@ public class SimpleMarkerPlugin extends Service {
   
   /* The set with the marking ids */
   private Set<String> mMarkingProgramIds;
-  
+    
   /**
    * At onBind the Plugin for TV-Browser is loaded.
    */
@@ -106,6 +106,7 @@ public class SimpleMarkerPlugin extends Service {
     @Override
     public boolean onProgramContextMenuSelected(Program program, PluginMenu pluginMenu) throws RemoteException {      
       boolean mark = false;
+      try {
       String programId = String.valueOf(program.getId());
       
       if(pluginMenu.getId() == MARK_ACTION) {
@@ -120,14 +121,17 @@ public class SimpleMarkerPlugin extends Service {
           mRemovingProgramId = program.getId();
           
           boolean unmarked = false;
-          
+          Log.d("info2", "get TVB SETTINGS ");
+          Log.d("info2", "get TVB SETTINGS VERSION " + mPluginManager.getTvBrowserSettings().getTvbVersionCode() + " " + mPluginManager.getTvBrowserSettings().getLastKnownProgramId());
           if(mPluginManager.getTvBrowserSettings().getTvbVersionCode() >= 308) {
+            Log.d("info2", "unmark now ");
             unmarked = mPluginManager.unmarkProgramWithIcon(program,SimpleMarkerPlugin.class.getCanonicalName());
+            Log.d("info2", "unmark done " + unmarked);
           }
           else {
             unmarked = mPluginManager.unmarkProgram(program);
           }
-          
+          Log.d("info2", "OTHER UNMARK DONE " + unmarked);
           if(unmarked) {
             mMarkingProgramIds.remove(programId);
             save();
@@ -136,7 +140,9 @@ public class SimpleMarkerPlugin extends Service {
           mRemovingProgramId = -1;
         }
       }
-      
+      }catch(Throwable t) {
+        Log.d("info2", "",t);
+      }
       return mark;
     }
     
@@ -148,21 +154,16 @@ public class SimpleMarkerPlugin extends Service {
     @Override
     public void onActivation(PluginManager pluginManager) throws RemoteException {
       mPluginManager = pluginManager;
-      
+      mPluginManager.unmarkProgram(null);
       mMarkingProgramIds = new HashSet<String>();
-      Map<String,?> map = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getAll();
+
+      Object test = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getAll().get(PREF_MARKINGS);
       
-      for(String key : map.keySet()) {
-        Object test = map.get(key);
-        
-        if(test instanceof Set) {
-          mMarkingProgramIds = (Set<String>)test;
-        }
-        else {
-          if(test != null) {
-            mMarkingProgramIds.addAll(Arrays.asList(((String)test).split(";")));
-          }
-        }
+      if(test instanceof Set) {
+        mMarkingProgramIds = (Set<String>)test;
+      }
+      else if(test instanceof String) {
+        mMarkingProgramIds.addAll(Arrays.asList(((String)test).split(";")));
       }
     }
     
@@ -178,14 +179,18 @@ public class SimpleMarkerPlugin extends Service {
     
     @Override
     public void handleFirstKnownProgramId(long programId) throws RemoteException {
+      Log.d("info2", "firstKnown " + programId);
       if(programId == -1) {
         mMarkingProgramIds.clear();
       }
       else {
+        long lastKnown = mPluginManager.getTvBrowserSettings().getLastKnownProgramId();
+        Log.d("info2", "lastKnown " + lastKnown);
         String[] knownIds = mMarkingProgramIds.toArray(new String[mMarkingProgramIds.size()]);
         
         for(int i = knownIds.length-1; i >= 0; i--) {
-          if(Long.parseLong(knownIds[i]) < programId) {
+          long id = Long.parseLong(knownIds[i]);
+          if(id < programId || (lastKnown > programId && id > lastKnown)) {
             mMarkingProgramIds.remove(knownIds[i]);
           }
         }
