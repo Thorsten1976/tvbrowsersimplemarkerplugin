@@ -1,5 +1,6 @@
 <resources>
 
+    <string name="info">Diese App ist ein Plugin für die App TV-Browser.\n\nSie kann nur innerhalb von TV-Browser benutzt werden.</string>
     <string name="app_name">TV-Browser SimpleMarkerPlugin</string>
     
     <string name="service_simplemarker_name">SimpleMarkerPlugin</string>
